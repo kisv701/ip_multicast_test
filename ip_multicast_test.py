@@ -15,10 +15,9 @@ def parse_arguments():
   return args
 
 def init_socket(group, port, if_addr):
-
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
   sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-  
+
   # "4s4s" is a format specifier for 2 4-byte strings.
   mreq = struct.pack("4s4s", socket.inet_aton(group), socket.inet_aton(if_addr))
   sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
@@ -30,11 +29,10 @@ def init_socket(group, port, if_addr):
 def main():
   RECV_SIZE = 4096
   args = parse_arguments()
-  
+
   join_on_all_interfaces = args.if_addr == '0.0.0.0'
   if_addr = args.if_addr
-  
-  
+
   listening_sockets = []
 
   if join_on_all_interfaces:
@@ -48,14 +46,14 @@ def main():
     sock = init_socket(args.multicast_group, args.multicast_port, args.if_addr)
     listening_sockets.append(sock)
     print(f'Joining {args.multicast_group}:{args.multicast_port} from interface with ip {args.if_addr}')
-  
-  print(f"Listening...")
+
+  print("Listening...")
 
   while True:
     readable, _, _  = select.select(listening_sockets, [], [], 1.0)
     for sock in readable:
       ip, port = sock.getsockname()
-      data, (sender_addr, sender_port) = sock.recvfrom(RECV_SIZE) 
+      data, (sender_addr, _) = sock.recvfrom(RECV_SIZE)
       print(f"New data ({len(data)}) from: {sender_addr:15} -> {args.multicast_group} -> {ip:15}:{port}")
       if args.print_data:
         print(" ".join([f"{byte:02X}" for byte in data]))
